@@ -1,0 +1,17 @@
+{
+	"data": {
+		"filename": "sp500.csv",
+		"columns": [
+			"Close",
+			"Volume"
+		],
+		"sequence_length": 50,
+		"train_test_split": 0.85,
+		"normalise": true
+	},
+	"model": {
+		"loss": "mse",
+		"optimizer": "adam",
+		"load_model": "saved_models/26012019-161635-e2.h5"
+	}
+}
