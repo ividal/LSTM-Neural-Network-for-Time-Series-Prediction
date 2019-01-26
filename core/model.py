@@ -14,9 +14,11 @@ class Model():
 	def __init__(self):
 		self.model = Sequential()
 
-	def load_model(self, filepath):
+	def load_model(self, filepath, configs):
 		print('[Model] Loading model from file %s' % filepath)
 		self.model = load_model(filepath)
+		self.model.compile(loss=configs['model']['loss'], optimizer=configs['model']['optimizer'])
+
 
 	def build_model(self, configs):
 		timer = Timer()
