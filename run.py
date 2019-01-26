@@ -20,6 +20,17 @@ def plot_results(predicted_data, true_data, out_path):
     plt.savefig(out_path, bbox_inches="tight")
 
 
+def plot_diff(predicted_data, true_data, out_path):
+    fig = plt.figure(facecolor='white', figsize=(60,10))
+    ax = fig.add_subplot(111)
+    diff = true_data - predicted_data
+    ax.plot(diff, label='Diff(True Data, Prediction)')
+    plt.legend()
+
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    plt.savefig(out_path, bbox_inches="tight")
+
+
 def plot_results_multiple(predicted_data, true_data, prediction_len, out_path):
     fig = plt.figure(facecolor='white', figsize=(20,10))
     ax = fig.add_subplot(111)
@@ -110,15 +121,11 @@ def main():
 
     # predictions_full = model.predict_sequence_full(x_test, configs['data']['sequence_length'])
     # plot_results(predictions_full, y_test, os.path.join(plot_dir, "full.png"))
-
-    #predictions_point = model.predict_point_by_point(x_test)
-    #plot_results(predictions_point, y_test, os.path.join(plot_dir, "point.png"))
-
-    # predictions_full = model.predict_sequence_full(x_test, configs['data']['sequence_length'])
-    # plot_results(predictions_full, y_test, os.path.join(plot_dir, "full.png"))
     #
     # predictions_point = model.predict_point_by_point(x_test)
     # plot_results(predictions_point, y_test, os.path.join(plot_dir, "point.png"))
+
+    # plot_diff(predictions_point, y_test, os.path.join(plot_dir, "diff.png"))
 
 
 if __name__ == '__main__':

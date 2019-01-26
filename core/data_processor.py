@@ -28,18 +28,13 @@ class DataLoader():
                 joblib.dump(self.scaler, scaler_path)
                 logging.info("Saved scaler to {}".format(scaler_path))
 
-            logging.info("Pre-norm: \nmin \n{}, \n\nmax \n{}, \n\nmean \n{}".format(
-                    selected_cols.iloc[:,0:5].min(),
-                    selected_cols.iloc[:,0:5].max(),
-                    selected_cols.iloc[:,0:5].mean()))
+            logging.debug("Pre-norm: \n{}".format(
+                    selected_cols.iloc[:,0:5].describe()))
 
-            # normalized_selected = pd.DataFrame(columns=cols)
             selected_cols[cols] = pd.DataFrame(self.scaler.transform(selected_cols[cols]))
 
-            logging.info("Post-norm: \nmin \n{}, \n\nmax \n{}, \n\nmean \n{}".format(
-                    selected_cols.iloc[:,0:5].min(),
-                    selected_cols.iloc[:,0:5].max(),
-                    selected_cols.iloc[:,0:5].mean()))
+            logging.debug("Post-norm: \n{}".format(
+                    selected_cols.iloc[:,0:5].describe()))
 
         self.data_train = selected_cols.values[:i_split]
         self.data_test  = selected_cols.values[i_split:]
