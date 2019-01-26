@@ -1,9 +1,12 @@
-import os
 import json
+import logging
 import math
 import matplotlib.pyplot as plt
+import os
 from core.data_processor import DataLoader
 from core.model import Model
+
+logging.basicConfig(level=logging.INFO)
 
 
 def plot_results(predicted_data, true_data, out_path):
@@ -35,9 +38,9 @@ def main():
     config_path = 'config/config.json'
     with open(config_path, 'r') as f:
         configs = json.load(f)
-        print("Loaded {}".format(config_path))
+        logging.info("Loaded {}".format(config_path))
 
-    print("\n{}\n".format(configs))
+    logging.info("\n{}\n".format(configs))
 
     data_path = configs['data']['filename']
     data_dir = os.path.dirname(data_path)
@@ -56,7 +59,7 @@ def main():
 
     if configs['model'].get('load_model'):
         model_path = os.path.join(configs['model']['load_model'])
-        print("Loading {}".format(model_path))
+        logging.info("Loading {}".format(model_path))
         model.load_model(model_path, configs)
         plot_dir = os.path.join(os.path.dirname(model_path), "plots")
         os.makedirs(plot_dir, exist_ok=True)
@@ -104,6 +107,12 @@ def main():
         'sequence_length'], configs['data']['sequence_length'])
     plot_results_multiple(predictions_multiple, y_test, configs['data']['sequence_length'],
                           out_path=os.path.join(plot_dir, "multiple.png"))
+
+    # predictions_full = model.predict_sequence_full(x_test, configs['data']['sequence_length'])
+    # plot_results(predictions_full, y_test, os.path.join(plot_dir, "full.png"))
+
+    #predictions_point = model.predict_point_by_point(x_test)
+    #plot_results(predictions_point, y_test, os.path.join(plot_dir, "point.png"))
 
     # predictions_full = model.predict_sequence_full(x_test, configs['data']['sequence_length'])
     # plot_results(predictions_full, y_test, os.path.join(plot_dir, "full.png"))

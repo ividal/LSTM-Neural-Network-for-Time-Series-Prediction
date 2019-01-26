@@ -1,8 +1,11 @@
+import logging
 import numpy as np
 import os
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.externals import joblib
+
+logger = logging.getLogger(__name__)
 
 
 class DataLoader():
@@ -18,14 +21,14 @@ class DataLoader():
             # Normalize and save scaler
             if os.path.exists(scaler_path):
                 self.scaler = joblib.load(scaler_path)
-                print("Reading scaler from {}".format(scaler_path))
+                logging.info("Reading scaler from {}".format(scaler_path))
             else:
                 train_df = selected_cols.iloc[:i_split]
                 self.create_scaler(train_df[cols])
                 joblib.dump(self.scaler, scaler_path)
-                print("Saved scaler to {}".format(scaler_path))
+                logging.info("Saved scaler to {}".format(scaler_path))
 
-            print("Pre-norm: \nmin \n{}, \n\nmax \n{}, \n\nmean \n{}".format(
+            logging.info("Pre-norm: \nmin \n{}, \n\nmax \n{}, \n\nmean \n{}".format(
                     selected_cols.iloc[:,0:5].min(),
                     selected_cols.iloc[:,0:5].max(),
                     selected_cols.iloc[:,0:5].mean()))
@@ -33,7 +36,7 @@ class DataLoader():
             # normalized_selected = pd.DataFrame(columns=cols)
             selected_cols[cols] = pd.DataFrame(self.scaler.transform(selected_cols[cols]))
 
-            print("Post-norm: \nmin \n{}, \n\nmax \n{}, \n\nmean \n{}".format(
+            logging.info("Post-norm: \nmin \n{}, \n\nmax \n{}, \n\nmean \n{}".format(
                     selected_cols.iloc[:,0:5].min(),
                     selected_cols.iloc[:,0:5].max(),
                     selected_cols.iloc[:,0:5].mean()))
