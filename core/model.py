@@ -1,12 +1,15 @@
-import os
-import math
+import logging
 import numpy as np
+import os
 import datetime as dt
-from numpy import newaxis
-from core.utils import Timer
 from keras.layers import Dense, Activation, Dropout, LSTM
 from keras.models import Sequential, load_model
 from keras.callbacks import EarlyStopping, ModelCheckpoint
+from core.utils import Timer
+
+
+logger = logging.getLogger(__name__)
+
 
 class Model():
 	"""A class for an building and inferencing an lstm model"""
@@ -47,8 +50,8 @@ class Model():
 	def train(self, x, y, epochs, batch_size, save_dir):
 		timer = Timer()
 		timer.start()
-		print('[Model] Training Started')
-		print('[Model] %s epochs, %s batch size' % (epochs, batch_size))
+		logger.info('[Model] Training Started')
+		logger.info('[Model] %s epochs, %s batch size' % (epochs, batch_size))
 		
 		save_fname = os.path.join(save_dir, '%s-e%s.h5' % (dt.datetime.now().strftime('%d%m%Y-%H%M%S'), str(epochs)))
 		callbacks = [
@@ -64,14 +67,14 @@ class Model():
 		)
 		self.model.save(save_fname)
 
-		print('[Model] Training Completed. Model saved as %s' % save_fname)
+		logger.info('[Model] Training Completed. Model saved as %s' % save_fname)
 		timer.stop()
 
 	def train_generator(self, data_gen, epochs, batch_size, steps_per_epoch, save_dir):
 		timer = Timer()
 		timer.start()
-		print('[Model] Training Started')
-		print('[Model] %s epochs, %s batch size, %s batches per epoch' % (epochs, batch_size, steps_per_epoch))
+		logger.info('[Model] Training Started')
+		logger.info('[Model] %s epochs, %s batch size, %s batches per epoch' % (epochs, batch_size, steps_per_epoch))
 		
 		save_fname = os.path.join(save_dir, '%s-e%s.h5' % (dt.datetime.now().strftime('%d%m%Y-%H%M%S'), str(epochs)))
 		callbacks = [
@@ -85,37 +88,46 @@ class Model():
 			workers=1
 		)
 		
-		print('[Model] Training Completed. Model saved as %s' % save_fname)
+		logger.info('[Model] Training Completed. Model saved as %s' % save_fname)
 		timer.stop()
 
 	def predict_point_by_point(self, data):
 		#Predict each timestep given the last sequence of true data, in effect only predicting 1 step ahead each time
-		print('[Model] Predicting Point-by-Point...')
+		timer = Timer()
+		timer.start()
+		logger.info('[Model] Predicting Point-by-Point...')
 		predicted = self.model.predict(data)
 		predicted = np.reshape(predicted, (predicted.size,))
+		timer.stop()
 		return predicted
 
 	def predict_sequences_multiple(self, data, window_size, prediction_len):
 		#Predict sequence of 50 steps before shifting prediction run forward by 50 steps
-		print('[Model] Predicting Sequences Multiple...')
+		timer = Timer()
+		timer.start()
+		logger.info('[Model] Predicting Sequences Multiple...')
 		prediction_seqs = []
 		for i in range(int(len(data)/prediction_len)):
 			curr_frame = data[i*prediction_len]
 			predicted = []
 			for j in range(prediction_len):
-				predicted.append(self.model.predict(curr_frame[newaxis,:,:])[0,0])
+				predicted.append(self.model.predict(curr_frame[np.newaxis,:,:])[0,0])
 				curr_frame = curr_frame[1:]
 				curr_frame = np.insert(curr_frame, [window_size-2], predicted[-1], axis=0)
 			prediction_seqs.append(predicted)
+		timer.stop()
 		return prediction_seqs
 
 	def predict_sequence_full(self, data, window_size):
 		#Shift the window by 1 new prediction each time, re-run predictions on new window
-		print('[Model] Predicting Sequences Full...')
+		timer = Timer()
+		timer.start()
+		logger.info('[Model] Predicting Sequences Full...')
 		curr_frame = data[0]
 		predicted = []
 		for i in range(len(data)):
-			predicted.append(self.model.predict(curr_frame[newaxis,:,:])[0,0])
+			predicted.append(self.model.predict(curr_frame[np.newaxis,:,:])[0,0])
 			curr_frame = curr_frame[1:]
 			curr_frame = np.insert(curr_frame, [window_size-2], predicted[-1], axis=0)
+		timer.stop()
 		return predicted

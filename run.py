@@ -1,16 +1,30 @@
-import os
 import json
+import logging
 import math
 import matplotlib.pyplot as plt
+import os
 from core.data_processor import DataLoader
 from core.model import Model
 
+logging.basicConfig(level=logging.INFO)
+
 
 def plot_results(predicted_data, true_data, out_path):
-    fig = plt.figure(facecolor='white', figsize=(20,10))
+    fig = plt.figure(facecolor='white', figsize=(60,10))
     ax = fig.add_subplot(111)
     ax.plot(true_data, label='True Data')
     plt.plot(predicted_data, label='Prediction')
+    plt.legend()
+
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    plt.savefig(out_path, bbox_inches="tight")
+
+
+def plot_diff(predicted_data, true_data, out_path):
+    fig = plt.figure(facecolor='white', figsize=(60,10))
+    ax = fig.add_subplot(111)
+    diff = true_data - predicted_data
+    ax.plot(diff, label='Diff(True Data, Prediction)')
     plt.legend()
 
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
@@ -32,26 +46,33 @@ def plot_results_multiple(predicted_data, true_data, prediction_len, out_path):
 
 
 def main():
-    config_path = 'config_load.json'
+    config_path = 'config/config.json'
     with open(config_path, 'r') as f:
         configs = json.load(f)
-        print("Loaded {}".format(config_path))
+        logging.info("Loaded {}".format(config_path))
 
-    print("\n{}\n".format(configs))
+    logging.info("\n{}\n".format(configs))
+
+    data_path = configs['data']['filename']
+    data_dir = os.path.dirname(data_path)
+    dtypes = configs['data'].get('dtypes', None)
+    windowed_normalization = configs['data']['normalise']
 
     data = DataLoader(
-        os.path.join('data', configs['data']['filename']),
-        configs['data']['train_test_split'],
-            configs['data']['columns'])
+            data_path,
+            configs['data']['train_test_split'],
+            configs['data']['columns'],
+            scaler_path=os.path.join(data_dir, "scaler"),
+            windowed_normalization=windowed_normalization,
+            dtypes=dtypes)
 
     model = Model()
 
     if configs['model'].get('load_model'):
         model_path = os.path.join(configs['model']['load_model'])
-        print("Loading {}".format(model_path))
+        logging.info("Loading {}".format(model_path))
         model.load_model(model_path, configs)
-        plot_dir = os.path.join(os.path.dirname(model_path),
-        "plots")
+        plot_dir = os.path.join(os.path.dirname(model_path), "plots")
         os.makedirs(plot_dir, exist_ok=True)
     else:
         plot_dir = os.path.join(configs['model']['save_dir'], "plots")
@@ -59,7 +80,7 @@ def main():
         model.build_model(configs)
         x, y = data.get_train_data(
                 seq_len=configs['data']['sequence_length'],
-                normalise=configs['data']['normalise']
+                windowed_normalization=windowed_normalization
                 )
 
         '''
@@ -72,13 +93,15 @@ def main():
             save_dir = configs['model']['save_dir']
         )
         '''
-        # out-of memory generative training
-        steps_per_epoch = math.ceil((data.len_train - configs['data']['sequence_length']) / configs['training']['batch_size'])
+        # out-of-memory generative training
+        steps_per_epoch = math.ceil(
+                (data.len_train - configs['data']['sequence_length'])
+                / configs['training']['batch_size'])
         model.train_generator(
             data_gen=data.generate_train_batch(
                 seq_len=configs['data']['sequence_length'],
                 batch_size=configs['training']['batch_size'],
-                normalise=configs['data']['normalise']
+                windowed_normalization=windowed_normalization
             ),
             epochs=configs['training']['epochs'],
             batch_size=configs['training']['batch_size'],
@@ -88,20 +111,21 @@ def main():
 
     x_test, y_test = data.get_test_data(
         seq_len=configs['data']['sequence_length'],
-        normalise=configs['data']['normalise']
+        windowed_normalization=windowed_normalization
     )
 
     predictions_multiple = model.predict_sequences_multiple(x_test, configs['data'][
         'sequence_length'], configs['data']['sequence_length'])
-
-    # predictions_full = model.predict_sequence_full(x_test, configs['data']['sequence_length'])
-    # predictions_point= model.predict_point_by_point(x_test)
-
     plot_results_multiple(predictions_multiple, y_test, configs['data']['sequence_length'],
                           out_path=os.path.join(plot_dir, "multiple.png"))
+
+    # predictions_full = model.predict_sequence_full(x_test, configs['data']['sequence_length'])
     # plot_results(predictions_full, y_test, os.path.join(plot_dir, "full.png"))
+    #
+    # predictions_point = model.predict_point_by_point(x_test)
     # plot_results(predictions_point, y_test, os.path.join(plot_dir, "point.png"))
 
+    # plot_diff(predictions_point, y_test, os.path.join(plot_dir, "diff.png"))
 
 
 if __name__ == '__main__':
